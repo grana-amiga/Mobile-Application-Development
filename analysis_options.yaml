@@ -1,0 +1,8 @@
+# Regras de análise estática (flutter analyze) do projeto.
+include: package:flutter_lints/flutter.yaml
+
+linter:
+  rules:
+    # Mantemos o código simples para estudo; "const" ausente não é erro.
+    prefer_const_constructors: false
+    prefer_const_literals_to_create_immutables: false
