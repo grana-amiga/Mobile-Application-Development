@@ -86,6 +86,7 @@ class _NavButton extends StatelessWidget {
             constraints: const BoxConstraints(minHeight: 60),
             padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 2),
             child: Column(
+              mainAxisSize: MainAxisSize.min,
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Icon(data.icon, color: color, size: 26),

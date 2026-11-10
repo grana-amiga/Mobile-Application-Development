@@ -117,11 +117,13 @@ class _EnergyTabState extends State<EnergyTab> {
         const SectionTitle('Dicas para gastar menos luz'),
         const _TipRow(
           icon: Icons.shower,
-          text: 'Banho mais curto: o chuveiro elétrico é um dos maiores gastos da casa.',
+          text:
+              'Banho mais curto: o chuveiro elétrico é um dos maiores gastos da casa.',
         ),
         const _TipRow(
           icon: Icons.power,
-          text: 'Tire da tomada o que não está usando. O modo espera também gasta.',
+          text:
+              'Tire da tomada o que não está usando. O modo espera também gasta.',
         ),
         const _TipRow(
           icon: Icons.kitchen,
@@ -172,7 +174,8 @@ class _EnergyTabState extends State<EnergyTab> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const Text('Gasto de luz no mês', style: AppText.small),
-                    Text(formatBRL(_cost), style: AppText.h1.copyWith(fontSize: 30)),
+                    Text(formatBRL(_cost),
+                        style: AppText.h1.copyWith(fontSize: 30)),
                     Text(
                       'Meta: ${formatBRL(_MeterData.goalReais)} · ${_MeterData.monthKwh.toStringAsFixed(0)} kWh',
                       style: AppText.small,
@@ -219,7 +222,8 @@ class _EnergyTabState extends State<EnergyTab> {
             children: [
               const Icon(Icons.sensors, color: AppColors.petrol),
               const SizedBox(width: 8),
-              const Expanded(child: Text('Medidor conectado', style: AppText.h3)),
+              const Expanded(
+                  child: Text('Medidor conectado', style: AppText.h3)),
               // Switch: chave de liga/desliga.
               Switch(value: _connected, onChanged: _toggleMeter),
             ],
@@ -265,7 +269,8 @@ class _EnergyTabState extends State<EnergyTab> {
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.end,
                         children: [
-                          Text('${_MeterData.weeks[i].toStringAsFixed(0)}', style: AppText.small),
+                          Text(_MeterData.weeks[i].toStringAsFixed(0),
+                              style: AppText.small),
                           const SizedBox(height: 4),
                           Container(
                             height: 80 * (_MeterData.weeks[i] / maxValue),
@@ -330,8 +335,11 @@ class _BillTile extends StatelessWidget {
                 Text(bill.name, style: AppText.h3),
                 const SizedBox(height: 4),
                 TagChip(
-                  icon: urgent ? Icons.notifications_active : Icons.calendar_today,
-                  label: '${dueText(bill.due, now)} · ${formatShortDate(bill.due)}',
+                  icon: urgent
+                      ? Icons.notifications_active
+                      : Icons.calendar_today,
+                  label:
+                      '${dueText(bill.due, now)} · ${formatShortDate(bill.due)}',
                   background: urgent
                       ? AppColors.brickSoft
                       : (soon ? AppColors.yellowSoft : AppColors.mintSoft),
