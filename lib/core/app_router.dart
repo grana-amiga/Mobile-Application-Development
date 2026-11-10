@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../screens/login_screen.dart';
 import '../screens/welcome_screen.dart';
 import 'app_routes.dart';
 
@@ -15,6 +16,8 @@ class AppRouter {
     switch (settings.name) {
       case AppRoutes.welcome:
         return _page(const WelcomeScreen(), settings);
+      case AppRoutes.login:
+        return _page(const LoginScreen(), settings);
     }
     return null; // rota desconhecida
   }
