@@ -76,7 +76,7 @@ class _Gauge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final position = commitment.clamp(0.0, 1.0);
+    final position = commitment.clamp(0.0, 1.0).toDouble();
 
     // LayoutBuilder entrega a largura disponível, necessária para colocar o
     // marcador na posição certa dentro da barra.
