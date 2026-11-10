@@ -313,6 +313,8 @@ const List<GameInfo> allGames = [
     kind: GameKind.quiz,
     intro:
         'Vou mostrar um gasto. Diga se é algo que você precisa ou algo que você quer.',
+    lesson:
+        'Antes de comprar, pergunte: eu preciso disso agora? Primeiro as necessidades, depois os desejos.',
     maxScore: 80,
     rounds: _needOrWantRounds,
   ),
@@ -327,6 +329,8 @@ const List<GameInfo> allGames = [
     kind: GameKind.cart,
     intro:
         'Você tem 60 reais para as compras. Toque nos itens que quer levar e não passe do valor. O que é essencial vale mais pontos.',
+    lesson:
+        'Faça uma lista e comece pelo essencial: comida, limpeza e higiene. Os extras só entram se sobrar dinheiro.',
     maxScore: 55,
   ),
   GameInfo(
@@ -340,6 +344,8 @@ const List<GameInfo> allGames = [
     kind: GameKind.quiz,
     intro:
         'Em cada situação, escolha a opção que sai mais barata. Juros são o preço de pedir dinheiro emprestado.',
+    lesson:
+        'Compare o valor total, não só a parcela. Parcelar quase sempre custa mais caro por causa dos juros.',
     maxScore: 60,
     rounds: _installmentRounds,
   ),
@@ -354,6 +360,8 @@ const List<GameInfo> allGames = [
     kind: GameKind.savings,
     intro:
         'Cada meta tem um prazo. Mexa na barra para escolher quanto guardar por mês e veja se chega lá.',
+    lesson:
+        'Guardar um valor pequeno todo mês chega longe. O segredo é guardar sempre, sem falhar.',
     maxScore: 60,
   ),
   GameInfo(
@@ -367,6 +375,8 @@ const List<GameInfo> allGames = [
     kind: GameKind.quiz,
     intro:
         'Vou ler uma frase sobre dinheiro. Diga se ela é um mito ou uma verdade.',
+    lesson:
+        'Informação é o melhor remédio contra dívidas. Conte para a família o que você aprendeu!',
     maxScore: 80,
     rounds: _mythOrTruthRounds,
   ),

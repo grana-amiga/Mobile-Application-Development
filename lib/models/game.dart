@@ -74,6 +74,7 @@ class GameInfo {
     required this.minutes,
     required this.kind,
     required this.intro,
+    required this.lesson,
     required this.maxScore,
     this.rounds = const [],
   });
@@ -89,6 +90,9 @@ class GameInfo {
 
   /// Texto curto de instrução, também lido em voz alta.
   final String intro;
+
+  /// Aprendizado mostrado ao fim da partida ("o que levamos daqui").
+  final String lesson;
 
   /// Pontuação máxima possível (usada para calcular as estrelas).
   final int maxScore;
