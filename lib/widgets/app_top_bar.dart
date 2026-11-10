@@ -7,10 +7,12 @@ import 'audio_button.dart';
 /// for informado, o botão "Ouvir" que lê o texto em voz alta.
 ///
 /// [extraActions] são botões extras exibidos antes do botão de áudio.
+/// Com [compactAudio] o botão de áudio mostra só o ícone (cabe melhor).
 AppBar buildAppBar({
   required String title,
   String? audioText,
   List<Widget> extraActions = const [],
+  bool compactAudio = false,
 }) {
   return AppBar(
     backgroundColor: AppColors.cream,
@@ -19,13 +21,18 @@ AppBar buildAppBar({
     elevation: 0,
     scrolledUnderElevation: 0,
     centerTitle: true,
-    title: Text(title, style: AppText.h2),
+    title: Text(
+      title,
+      style: AppText.h2,
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+    ),
     actions: [
       ...extraActions,
       if (audioText != null)
         Padding(
           padding: const EdgeInsets.only(right: 12),
-          child: AudioButton(text: audioText),
+          child: AudioButton(text: audioText, compact: compactAudio),
         ),
     ],
   );

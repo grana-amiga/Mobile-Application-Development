@@ -9,10 +9,18 @@ import 'app_snackbar.dart';
 /// Ajuda quem tem dificuldade de leitura. Se o aparelho não conseguir falar,
 /// mostra um aviso de erro em vez de falhar em silêncio.
 class AudioButton extends StatelessWidget {
-  const AudioButton({super.key, required this.text, this.label = 'Ouvir'});
+  const AudioButton({
+    super.key,
+    required this.text,
+    this.label = 'Ouvir',
+    this.compact = false,
+  });
 
   final String text;
   final String label;
+
+  /// Versão só com o ícone de alto-falante, para caber em barras estreitas.
+  final bool compact;
 
   // `async` permite usar `await`: esperamos o serviço de áudio responder
   // sem travar a tela. Depois do `await` a tela pode ter sido fechada, por
@@ -30,6 +38,20 @@ class AudioButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (compact) {
+      return IconButton(
+        tooltip: 'Ouvir esta tela',
+        onPressed: () => _speak(context),
+        icon: const Icon(Icons.volume_up, size: 26),
+        style: IconButton.styleFrom(
+          foregroundColor: AppColors.petrol,
+          backgroundColor: AppColors.card,
+          minimumSize: const Size(48, 48),
+          side: const BorderSide(color: AppColors.border, width: 1.5),
+        ),
+      );
+    }
+
     return OutlinedButton.icon(
       onPressed: () => _speak(context),
       icon: const Icon(Icons.volume_up, size: 22),
