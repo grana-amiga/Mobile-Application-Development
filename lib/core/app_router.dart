@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 
+import '../models/game.dart';
+import '../screens/game_screen.dart';
+import '../screens/games_screen.dart';
 import '../screens/login_screen.dart';
 import '../screens/welcome_screen.dart';
 import 'app_routes.dart';
@@ -16,6 +19,11 @@ class AppRouter {
     switch (settings.name) {
       case AppRoutes.welcome:
         return _page(const WelcomeScreen(), settings);
+      case AppRoutes.games:
+        return _page(const GamesScreen(), settings);
+      case AppRoutes.game:
+        // Os parâmetros da rota chegam em `settings.arguments`.
+        return _page(GameScreen(args: settings.arguments as GameArgs), settings);
       case AppRoutes.login:
         return _page(const LoginScreen(), settings);
     }
