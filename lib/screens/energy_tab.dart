@@ -254,7 +254,7 @@ class _EnergyTabState extends State<EnergyTab> {
           const Text('Consumo por semana (kWh)', style: AppText.h3),
           const SizedBox(height: 14),
           SizedBox(
-            height: 130,
+            height: 170,
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
