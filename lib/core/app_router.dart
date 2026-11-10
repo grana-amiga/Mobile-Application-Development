@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 
 import '../models/game.dart';
+import '../models/transaction.dart';
+import '../screens/add_transaction_screen.dart';
+import '../screens/main_shell.dart';
+import '../screens/whatsapp_screen.dart';
 import '../screens/game_screen.dart';
 import '../screens/games_screen.dart';
 import '../screens/login_screen.dart';
@@ -26,6 +30,19 @@ class AppRouter {
         return _page(GameScreen(args: settings.arguments as GameArgs), settings);
       case AppRoutes.login:
         return _page(const LoginScreen(), settings);
+      case AppRoutes.main:
+        return _page(const MainShell(), settings);
+      case AppRoutes.addTransaction:
+        // Sem argumento, abre como "gasto".
+        final type = settings.arguments is TransactionType
+            ? settings.arguments as TransactionType
+            : TransactionType.expense;
+        return _page(AddTransactionScreen(initialType: type), settings);
+      case AppRoutes.whatsapp:
+        return _page(
+          WhatsAppScreen(args: settings.arguments as WhatsAppArgs),
+          settings,
+        );
     }
     return null; // rota desconhecida
   }
