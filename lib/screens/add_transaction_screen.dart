@@ -127,7 +127,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
       return;
     }
 
-    final amount = parseAmount(_amountController.text) ?? 0;
+    final amount = parseAmount(_amountController.text) ?? 0.0;
     final category = _category;
     if (category == null) return; // já garantido pela validação
 

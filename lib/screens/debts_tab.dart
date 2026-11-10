@@ -4,7 +4,6 @@ import '../core/formatters.dart';
 import '../models/debt.dart';
 import '../theme/app_theme.dart';
 import '../widgets/app_button.dart';
-import '../widgets/app_top_bar.dart';
 import '../widgets/mascot.dart';
 import '../widgets/section_title.dart';
 import '../widgets/tag_chip.dart';
@@ -27,50 +26,51 @@ class DebtsTab extends StatelessWidget {
   /// Chamado quando a pessoa toca em "Paguei esta parcela".
   final ValueChanged<Debt> onPayInstallment;
 
+  /// Texto lido em voz alta pelo botão de áudio da barra superior.
+  static String audioText(List<Debt> debts) {
+    final open = sortByInterest(debts).where((debt) => !debt.isPaidOff).toList();
+    if (open.isEmpty) {
+      return 'Plano de quitação. Parabéns, todas as dívidas foram pagas!';
+    }
+    final remaining =
+        open.fold<double>(0, (sum, debt) => sum + debt.remainingAmount);
+    return 'Plano de quitação. Ainda faltam ${spokenBRL(remaining)} em '
+        '${open.length} dívidas. Pague primeiro ${open.first.name}, '
+        'que tem os maiores juros.';
+  }
+
   @override
   Widget build(BuildContext context) {
     final sorted = sortByInterest(debts);
     final open = sorted.where((debt) => !debt.isPaidOff).toList();
-    final remaining = open.fold<double>(0, (sum, debt) => sum + debt.remainingAmount);
+    final remaining =
+        open.fold<double>(0, (sum, debt) => sum + debt.remainingAmount);
     final first = open.isEmpty ? null : open.first;
 
-    final audio = first == null
-        ? 'Plano de quitação. Parabéns, todas as dívidas foram pagas!'
-        : 'Plano de quitação. Ainda faltam ${spokenBRL(remaining)} em '
-            '${open.length} dívidas. Pague primeiro ${first.name}, '
-            'que tem os maiores juros.';
-
-    return Scaffold(
-      appBar: buildAppBar(
-        title: 'Plano de quitação',
-        audioText: audio,
-        compactAudio: true,
-      ),
-      body: ListView(
-        padding: const EdgeInsets.fromLTRB(20, 4, 20, 24),
-        children: [
-          _PlanSummary(progress: planProgress(debts), remaining: remaining),
-          const SizedBox(height: 16),
-          if (first != null)
-            MascotTip(
-              title: 'Comece por aqui',
-              message:
-                  '${first.name} tem os maiores juros (${first.monthlyRate.toStringAsFixed(0)}% ao mês). '
-                  'Pagar ela primeiro economiza mais dinheiro.',
-            ),
-          const SectionTitle('Minhas dívidas'),
-          if (sorted.isEmpty)
-            const Text('Nenhuma dívida cadastrada. Que ótimo!', style: AppText.body),
-          // `for` dentro da lista de filhos cria um cartão para cada dívida.
-          for (var i = 0; i < sorted.length; i++)
-            _DebtCard(
-              debt: sorted[i],
-              now: now,
-              isPriority: i == 0 && !sorted[i].isPaidOff,
-              onPay: () => onPayInstallment(sorted[i]),
-            ),
-        ],
-      ),
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(20, 4, 20, 24),
+      children: [
+        _PlanSummary(progress: planProgress(debts), remaining: remaining),
+        const SizedBox(height: 16),
+        if (first != null)
+          MascotTip(
+            title: 'Comece por aqui',
+            message:
+                '${first.name} tem os maiores juros (${first.monthlyRate.toStringAsFixed(0)}% ao mês). '
+                'Pagar ela primeiro economiza mais dinheiro.',
+          ),
+        const SectionTitle('Minhas dívidas'),
+        if (sorted.isEmpty)
+          const Text('Nenhuma dívida cadastrada. Que ótimo!', style: AppText.body),
+        // `for` dentro da lista de filhos cria um cartão para cada dívida.
+        for (var i = 0; i < sorted.length; i++)
+          _DebtCard(
+            debt: sorted[i],
+            now: now,
+            isPriority: i == 0 && !sorted[i].isPaidOff,
+            onPay: () => onPayInstallment(sorted[i]),
+          ),
+      ],
     );
   }
 }

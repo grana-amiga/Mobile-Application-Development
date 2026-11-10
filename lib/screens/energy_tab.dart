@@ -6,7 +6,6 @@ import 'package:flutter/material.dart';
 import '../core/formatters.dart';
 import '../models/bill.dart';
 import '../theme/app_theme.dart';
-import '../widgets/app_top_bar.dart';
 import '../widgets/section_title.dart';
 import '../widgets/tag_chip.dart';
 
@@ -21,26 +20,49 @@ class EnergyTab extends StatefulWidget {
   final List<Bill> bills;
   final DateTime now;
 
+  /// Texto lido em voz alta pelo botão de áudio da barra superior.
+  static String audioText(List<Bill> bills, DateTime now) {
+    final percent = (_MeterData.ratio * 100).round();
+    final audio = StringBuffer('Alertas e energia. ');
+    if (bills.isEmpty) {
+      audio.write('Nenhuma conta vence nos próximos dias. ');
+    } else {
+      audio.write(
+        'Você tem ${bills.length} contas para os próximos dias. '
+        'A mais próxima é ${bills.first.name}, ${dueText(bills.first.due, now)}. ',
+      );
+    }
+    audio.write('O gasto de luz do mês está em $percent por cento da meta.');
+    return audio.toString();
+  }
+
   @override
   State<EnergyTab> createState() => _EnergyTabState();
 }
 
+/// Dados de exemplo do medidor de energia.
+class _MeterData {
+  _MeterData._();
+
+  static const double monthKwh = 180; // consumo até agora no mês
+  static const double tariff = 0.80; // preço do kWh em reais
+  static const double goalReais = 180; // meta de gasto com luz
+
+  /// Consumo das últimas 4 semanas (kWh), para o gráfico de barras.
+  static const List<double> weeks = [38, 52, 47, 43];
+
+  static double get cost => monthKwh * tariff;
+  static double get ratio => cost / goalReais;
+}
+
 class _EnergyTabState extends State<EnergyTab> {
-  // Dados de exemplo do mês.
-  static const double _monthKwh = 180; // consumo até agora
-  static const double _tariff = 0.80; // preço do kWh em reais
-  static const double _goalReais = 180; // meta de gasto com luz
-
-  // Consumo dos últimos 4 meses de semanas (kWh por semana), para o gráfico.
-  static const List<double> _weeks = [38, 52, 47, 43];
-
   final math.Random _random = math.Random();
   Timer? _timer;
   bool _connected = true;
   int _watts = 420; // leitura "agora" do medidor
 
-  double get _cost => _monthKwh * _tariff;
-  double get _ratio => _cost / _goalReais;
+  double get _cost => _MeterData.cost;
+  double get _ratio => _MeterData.ratio;
 
   @override
   void initState() {
@@ -77,55 +99,35 @@ class _EnergyTabState extends State<EnergyTab> {
   @override
   Widget build(BuildContext context) {
     final percent = (_ratio * 100).round();
-    final next = widget.bills.isEmpty ? null : widget.bills.first;
 
-    final audio = StringBuffer('Alertas e energia. ');
-    if (next == null) {
-      audio.write('Nenhuma conta vence nos próximos dias. ');
-    } else {
-      audio.write(
-        'Você tem ${widget.bills.length} contas para os próximos dias. '
-        'A mais próxima é ${next.name}, ${dueText(next.due, widget.now)}. ',
-      );
-    }
-    audio.write('O gasto de luz do mês está em $percent por cento da meta.');
-
-    return Scaffold(
-      appBar: buildAppBar(
-        title: 'Alertas e energia',
-        audioText: audio.toString(),
-        compactAudio: true,
-      ),
-      body: ListView(
-        padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
-        children: [
-          const SectionTitle('Contas a vencer'),
-          if (widget.bills.isEmpty)
-            const _EmptyState(
-              icon: Icons.celebration,
-              text: 'Nenhuma conta vence nos próximos dias.',
-            ),
-          for (final bill in widget.bills)
-            _BillTile(bill: bill, now: widget.now),
-          const SectionTitle('Energia da casa', trailing: 'Dados de exemplo'),
-          _buildEnergyCard(percent),
-          const SizedBox(height: 14),
-          _buildWeeklyChart(),
-          const SectionTitle('Dicas para gastar menos luz'),
-          const _TipRow(
-            icon: Icons.shower,
-            text: 'Banho mais curto: o chuveiro elétrico é um dos maiores gastos da casa.',
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
+      children: [
+        const SectionTitle('Contas a vencer'),
+        if (widget.bills.isEmpty)
+          const _EmptyState(
+            icon: Icons.celebration,
+            text: 'Nenhuma conta vence nos próximos dias.',
           ),
-          const _TipRow(
-            icon: Icons.power,
-            text: 'Tire da tomada o que não está usando. O modo espera também gasta.',
-          ),
-          const _TipRow(
-            icon: Icons.kitchen,
-            text: 'Mantenha a porta da geladeira bem fechada.',
-          ),
-        ],
-      ),
+        for (final bill in widget.bills) _BillTile(bill: bill, now: widget.now),
+        const SectionTitle('Energia da casa', trailing: 'Dados de exemplo'),
+        _buildEnergyCard(percent),
+        const SizedBox(height: 14),
+        _buildWeeklyChart(),
+        const SectionTitle('Dicas para gastar menos luz'),
+        const _TipRow(
+          icon: Icons.shower,
+          text: 'Banho mais curto: o chuveiro elétrico é um dos maiores gastos da casa.',
+        ),
+        const _TipRow(
+          icon: Icons.power,
+          text: 'Tire da tomada o que não está usando. O modo espera também gasta.',
+        ),
+        const _TipRow(
+          icon: Icons.kitchen,
+          text: 'Mantenha a porta da geladeira bem fechada.',
+        ),
+      ],
     );
   }
 
@@ -172,7 +174,7 @@ class _EnergyTabState extends State<EnergyTab> {
                     const Text('Gasto de luz no mês', style: AppText.small),
                     Text(formatBRL(_cost), style: AppText.h1.copyWith(fontSize: 30)),
                     Text(
-                      'Meta: ${formatBRL(_goalReais)} · ${_monthKwh.toStringAsFixed(0)} kWh',
+                      'Meta: ${formatBRL(_MeterData.goalReais)} · ${_MeterData.monthKwh.toStringAsFixed(0)} kWh',
                       style: AppText.small,
                     ),
                   ],
@@ -226,7 +228,7 @@ class _EnergyTabState extends State<EnergyTab> {
           if (_connected)
             Text(
               'Agora: ${(_watts / 1000).toStringAsFixed(2).replaceAll('.', ',')} kW '
-              '(cerca de ${formatBRL(_watts / 1000 * _tariff)} por hora)',
+              '(cerca de ${formatBRL(_watts / 1000 * _MeterData.tariff)} por hora)',
               style: AppText.body,
             )
           else
@@ -241,7 +243,7 @@ class _EnergyTabState extends State<EnergyTab> {
 
   // Gráfico de barras simples feito só com Containers (sem pacotes extras).
   Widget _buildWeeklyChart() {
-    final maxValue = _weeks.reduce(math.max);
+    final maxValue = _MeterData.weeks.reduce(math.max);
 
     return Container(
       padding: const EdgeInsets.all(18),
@@ -256,19 +258,19 @@ class _EnergyTabState extends State<EnergyTab> {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
-                for (var i = 0; i < _weeks.length; i++)
+                for (var i = 0; i < _MeterData.weeks.length; i++)
                   Expanded(
                     child: Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 6),
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.end,
                         children: [
-                          Text('${_weeks[i].toStringAsFixed(0)}', style: AppText.small),
+                          Text('${_MeterData.weeks[i].toStringAsFixed(0)}', style: AppText.small),
                           const SizedBox(height: 4),
                           Container(
-                            height: 80 * (_weeks[i] / maxValue),
+                            height: 80 * (_MeterData.weeks[i] / maxValue),
                             decoration: BoxDecoration(
-                              color: _weeks[i] == maxValue
+                              color: _MeterData.weeks[i] == maxValue
                                   ? AppColors.peach
                                   : AppColors.mint,
                               borderRadius: BorderRadius.circular(10),

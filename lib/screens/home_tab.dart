@@ -4,7 +4,6 @@ import '../core/formatters.dart';
 import '../models/money_summary.dart';
 import '../models/transaction.dart';
 import '../theme/app_theme.dart';
-import '../widgets/app_top_bar.dart';
 import '../widgets/audio_button.dart';
 import '../widgets/section_title.dart';
 import '../widgets/thermometer_card.dart';
@@ -29,7 +28,6 @@ class HomeTab extends StatelessWidget {
     required this.onAddTransaction,
     required this.onOpenWhatsApp,
     required this.onSeeBills,
-    required this.onLogout,
   });
 
   final String userName;
@@ -42,55 +40,56 @@ class HomeTab extends StatelessWidget {
   final ValueChanged<TransactionType> onAddTransaction;
   final VoidCallback onOpenWhatsApp;
   final VoidCallback onSeeBills;
-  final VoidCallback onLogout;
+
+  /// Texto lido em voz alta pelo botão de áudio da barra superior.
+  static String audioText({
+    required String userName,
+    required List<Transaction> transactions,
+    required DateTime now,
+  }) {
+    final summary = MoneySummary.fromTransactions(transactions);
+    return 'Olá, $userName. O seu Termômetro do Dinheiro está em '
+        '${summary.level.label}. ${_balanceAudio(summary, monthName(now.month))}';
+  }
+
+  static String _balanceAudio(MoneySummary summary, String month) {
+    final negative = summary.balance < 0;
+    return 'Seu saldo de $month é ${spokenBRL(summary.balance)}'
+        '${negative ? ' negativo' : ''}. '
+        'Entrou ${spokenBRL(summary.income)} e saiu ${spokenBRL(summary.expenses)}.';
+  }
 
   @override
   Widget build(BuildContext context) {
     final summary = MoneySummary.fromTransactions(transactions);
     final month = monthName(now.month);
+    final balanceAudio = _balanceAudio(summary, month);
 
-    final balanceAudio =
-        'Seu saldo de $month é ${spokenBRL(summary.balance)}'
-        '${summary.balance < 0 ? ' negativo' : ''}. '
-        'Entrou ${spokenBRL(summary.income)} e saiu ${spokenBRL(summary.expenses)}.';
-
-    final pageAudio =
-        'Olá, $userName. O seu Termômetro do Dinheiro está em '
-        '${summary.level.label}. $balanceAudio';
-
-    return Scaffold(
-      appBar: buildAppBar(
-        title: 'Meu painel',
-        audioText: pageAudio,
-        compactAudio: true,
-        extraActions: [
-          IconButton(
-            tooltip: 'Sair',
-            onPressed: onLogout,
-            icon: const Icon(Icons.logout),
+    // Column: a lista rola dentro do Expanded e os botões ficam fixos embaixo.
+    return Column(
+      children: [
+        Expanded(
+          child: ListView(
+            padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+            children: [
+              _buildHero(summary),
+              if (dueSoon > 0) ...[
+                const SizedBox(height: 14),
+                _DueSoonPill(count: dueSoon, onTap: onSeeBills),
+              ],
+              const SizedBox(height: 14),
+              _buildBalanceCard(summary, month, balanceAudio),
+              const SectionTitle('Últimos registros'),
+              _buildFeed(),
+            ],
           ),
-        ],
-      ),
-      // Os botões fixos ficam em `bottomNavigationBar`: não rolam com a lista.
-      bottomNavigationBar: _ActionBar(
-        onIncome: () => onAddTransaction(TransactionType.income),
-        onExpense: () => onAddTransaction(TransactionType.expense),
-        onWhatsApp: onOpenWhatsApp,
-      ),
-      body: ListView(
-        padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
-        children: [
-          _buildHero(summary),
-          if (dueSoon > 0) ...[
-            const SizedBox(height: 14),
-            _DueSoonPill(count: dueSoon, onTap: onSeeBills),
-          ],
-          const SizedBox(height: 14),
-          _buildBalanceCard(summary, month, balanceAudio),
-          const SectionTitle('Últimos registros'),
-          _buildFeed(),
-        ],
-      ),
+        ),
+        _ActionBar(
+          onIncome: () => onAddTransaction(TransactionType.income),
+          onExpense: () => onAddTransaction(TransactionType.expense),
+          onWhatsApp: onOpenWhatsApp,
+        ),
+      ],
     );
   }
 
