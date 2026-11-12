@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 
 import '../models/game.dart';
+import '../models/lesson_video.dart';
 import '../models/transaction.dart';
 import '../screens/add_transaction_screen.dart';
 import '../screens/main_shell.dart';
+import '../screens/video_player_screen.dart';
 import '../screens/whatsapp_screen.dart';
 import '../screens/game_screen.dart';
 import '../screens/games_screen.dart';
@@ -37,7 +39,13 @@ class AppRouter {
         final type = settings.arguments is TransactionType
             ? settings.arguments as TransactionType
             : TransactionType.expense;
-        return _page(AddTransactionScreen(initialType: type), settings);
+        // <Transaction?> faz a rota devolver o gasto criado em `Navigator.pop`.
+        return _page<Transaction?>(AddTransactionScreen(initialType: type), settings);
+      case AppRoutes.video:
+        return _page(
+          VideoPlayerScreen(video: settings.arguments as LessonVideo),
+          settings,
+        );
       case AppRoutes.whatsapp:
         return _page(
           WhatsAppScreen(args: settings.arguments as WhatsAppArgs),
@@ -48,8 +56,9 @@ class AppRouter {
   }
 
   // MaterialPageRoute faz a transição padrão de tela de cada plataforma.
-  static Route<dynamic> _page(Widget screen, RouteSettings settings) {
-    return MaterialPageRoute<dynamic>(
+  // [T] é o tipo do valor que a tela devolve ao fechar (dynamic = qualquer um).
+  static Route<T> _page<T>(Widget screen, RouteSettings settings) {
+    return MaterialPageRoute<T>(
       builder: (context) => screen,
       settings: settings,
     );
