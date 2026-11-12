@@ -11,8 +11,8 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  # Leitura de textos em voz alta (audiodescrição) em Android, iOS e Web.
   flutter_tts: ^4.2.0
+  video_player: ^2.9.2
 
 dev_dependencies:
   flutter_test:
@@ -25,6 +25,7 @@ flutter:
   # Imagens do app (mascote "Amiguinho").
   assets:
     - assets/images/
+    - assets/videos/
 
   # Fonte Nunito (licença OFL em assets/fonts/OFL.txt): arredondada e fácil de ler.
   fonts:

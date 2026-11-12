@@ -18,4 +18,5 @@ class AppRoutes {
   static const String main = '/main';
   static const String addTransaction = '/add-transaction';
   static const String whatsapp = '/whatsapp';
+  static const String video = '/video';
 }

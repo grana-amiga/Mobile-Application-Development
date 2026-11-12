@@ -9,6 +9,7 @@ import '../theme/app_theme.dart';
 import '../widgets/app_top_bar.dart';
 import '../widgets/mascot.dart';
 import '../widgets/tag_chip.dart';
+import 'video_lessons_section.dart';
 
 /// Catálogo de jogos em tela cheia (aberto pelo "Ver todos os jogos").
 class GamesScreen extends StatelessWidget {
@@ -32,7 +33,10 @@ class GamesScreen extends StatelessWidget {
 /// É um StatefulWidget: guarda as estrelas de cada jogo e, quando uma partida
 /// termina, usa `setState` para atualizar o total na hora.
 class GamesCatalog extends StatefulWidget {
-  const GamesCatalog({super.key});
+  const GamesCatalog({super.key, this.showVideos = false});
+
+  /// Quando verdadeiro, mostra também a seção de videoaulas (aba Aprender).
+  final bool showVideos;
 
   @override
   State<GamesCatalog> createState() => _GamesCatalogState();
@@ -101,6 +105,7 @@ class _GamesCatalogState extends State<GamesCatalog> {
             stars: _bestStars[game.id] ?? 0,
             onTap: () => _openGame(game),
           ),
+        if (widget.showVideos) const VideoLessonsSection(),
       ],
     );
   }

@@ -121,7 +121,7 @@ class _MainShellState extends State<MainShell> {
       case 2:
         return EnergyTab.audioText(_bills, _now);
       default:
-        return 'Aprender. Escolha um jogo para treinar o que você sabe sobre dinheiro.';
+        return 'Aprender. Escolha um jogo para treinar ou assista às videoaulas rápidas sobre dinheiro.';
     }
   }
 
@@ -163,7 +163,7 @@ class _MainShellState extends State<MainShell> {
               onPayInstallment: _payInstallment,
             ),
             EnergyTab(bills: bills, now: _now),
-            const GamesCatalog(),
+            const GamesCatalog(showVideos: true),
           ],
         ),
       ),
