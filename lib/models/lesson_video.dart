@@ -20,4 +20,10 @@ class LessonVideo {
   final String asset;
   final Duration duration;
   final IconData icon;
+
+  /// Duração em texto curto, por exemplo "1:56 min".
+  String get durationLabel {
+    final seconds = (duration.inSeconds % 60).toString().padLeft(2, '0');
+    return '${duration.inMinutes}:$seconds min';
+  }
 }

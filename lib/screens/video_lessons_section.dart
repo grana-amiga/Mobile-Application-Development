@@ -11,11 +11,6 @@ import '../widgets/tag_chip.dart';
 class VideoLessonsSection extends StatelessWidget {
   const VideoLessonsSection({super.key});
 
-  String _duration(Duration time) {
-    final seconds = (time.inSeconds % 60).toString().padLeft(2, '0');
-    return '${time.inMinutes}:$seconds min';
-  }
-
   @override
   Widget build(BuildContext context) {
     // Column simples: esta seção fica dentro do ListView da aba Aprender.
@@ -26,7 +21,6 @@ class VideoLessonsSection extends StatelessWidget {
         for (final video in allVideos)
           _VideoTile(
             video: video,
-            duration: _duration(video.duration),
             onTap: () => Navigator.pushNamed(
               context,
               AppRoutes.video,
@@ -41,12 +35,10 @@ class VideoLessonsSection extends StatelessWidget {
 class _VideoTile extends StatelessWidget {
   const _VideoTile({
     required this.video,
-    required this.duration,
     required this.onTap,
   });
 
   final LessonVideo video;
-  final String duration;
   final VoidCallback onTap;
 
   @override
@@ -85,7 +77,7 @@ class _VideoTile extends StatelessWidget {
                       const SizedBox(height: 6),
                       TagChip(
                         icon: Icons.schedule,
-                        label: duration,
+                        label: video.durationLabel,
                         background: AppColors.mintSoft,
                       ),
                     ],
