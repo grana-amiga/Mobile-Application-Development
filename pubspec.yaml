@@ -11,8 +11,13 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  # Leitura de textos em voz alta (audiodescrição) em Android, iOS e Web.
   flutter_tts: ^4.2.0
   video_player: ^2.9.2
+  # Conversa com a API em Java (requisições HTTP).
+  http: ^1.2.2
+  # Guarda pequenos dados no aparelho (saldo inicial de cada dívida).
+  shared_preferences: ^2.3.2
 
 dev_dependencies:
   flutter_test:

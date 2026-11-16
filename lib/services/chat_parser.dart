@@ -25,24 +25,25 @@ class ChatParser {
     'recebi', 'ganhei', 'entrou', 'salario', 'pagamento', 'bico', 'vendi',
   ];
 
-  // Palavras que indicam cada categoria de gasto.
+  // Palavras que indicam cada categoria de gasto. As chaves são os nomes das
+  // categorias da API (catálogo `GET /categorias`).
   static const Map<String, List<String>> _expenseKeywords = {
     'Mercado': ['mercado', 'supermercado', 'feira', 'compras'],
     'Transporte': ['onibus', 'transporte', 'passagem', 'uber', 'gasolina', 'metro'],
-    'Luz': ['luz', 'energia'],
-    'Água': ['agua'],
-    'Comida': ['comida', 'almoco', 'lanche', 'padaria', 'pizza', 'jantar', 'cafe'],
-    'Remédio': ['remedio', 'farmacia', 'medico', 'consulta'],
-    'Escola': ['escola', 'material', 'curso', 'caderno'],
+    'Energia': ['luz', 'energia'],
+    'Moradia': ['aluguel', 'casa', 'gas', 'condominio', 'agua'],
+    'Alimentação': ['comida', 'almoco', 'lanche', 'padaria', 'pizza', 'jantar', 'cafe'],
+    'Saúde': ['remedio', 'farmacia', 'medico', 'consulta'],
     'Lazer': ['lazer', 'cinema', 'passeio', 'festa', 'jogo'],
-    'Casa': ['aluguel', 'casa', 'gas', 'condominio'],
   };
 
   static const Map<String, List<String>> _incomeKeywords = {
     'Salário': ['salario', 'pagamento'],
-    'Bico': ['bico', 'vendi', 'servico'],
-    'Benefício': ['beneficio', 'bolsa', 'auxilio'],
   };
+
+  // Categorias usadas quando nenhuma palavra-chave é encontrada.
+  static const String _defaultExpense = 'Outros gastos';
+  static const String _defaultIncome = 'Outras entradas';
 
   // Números escritos por extenso (só os mais comuns).
   static const Map<String, double> _numberWords = {
@@ -99,8 +100,9 @@ class ChatParser {
     return found && total > 0 ? total : null;
   }
 
-  /// Lê a frase inteira. Devolve `null` se não achar nenhum valor.
-  static ParsedEntry? parse(String text) {
+  /// Lê a frase inteira. Devolve `null` se não achar nenhum valor ou se a
+  /// lista de [categories] (vinda da API) não tiver categoria do tipo.
+  static ParsedEntry? parse(String text, List<TxCategory> categories) {
     final amount = extractAmount(text);
     if (amount == null) return null;
 
@@ -110,7 +112,7 @@ class ChatParser {
     final type = isIncome ? TransactionType.income : TransactionType.expense;
 
     final keywords = isIncome ? _incomeKeywords : _expenseKeywords;
-    var label = isIncome ? 'Outros' : 'Casa'; // categoria padrão
+    var label = isIncome ? _defaultIncome : _defaultExpense;
     for (final entry in keywords.entries) {
       if (entry.value.any(words.contains)) {
         label = entry.key;
@@ -118,8 +120,22 @@ class ChatParser {
       }
     }
 
-    final category = findCategory(label, type);
+    final category = _findCategory(categories, label, type);
     if (category == null) return null;
     return ParsedEntry(type: type, amount: amount, category: category);
+  }
+
+  // Procura a categoria pelo nome (sem acento e sem diferenciar maiúsculas).
+  // Se não achar, usa a primeira categoria do mesmo tipo.
+  static TxCategory? _findCategory(
+    List<TxCategory> categories,
+    String label,
+    TransactionType type,
+  ) {
+    final sameType = categoriesOf(categories, type);
+    for (final category in sameType) {
+      if (normalize(category.label) == normalize(label)) return category;
+    }
+    return sameType.isEmpty ? null : sameType.first;
   }
 }

@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 
+import '../models/debt.dart';
 import '../models/game.dart';
 import '../models/lesson_video.dart';
 import '../models/transaction.dart';
+import '../screens/add_debt_screen.dart';
 import '../screens/add_transaction_screen.dart';
 import '../screens/main_shell.dart';
+import '../screens/simulators_screen.dart';
 import '../screens/video_player_screen.dart';
 import '../screens/whatsapp_screen.dart';
 import '../screens/game_screen.dart';
@@ -35,12 +38,15 @@ class AppRouter {
       case AppRoutes.main:
         return _page(const MainShell(), settings);
       case AppRoutes.addTransaction:
-        // Sem argumento, abre como "gasto".
-        final type = settings.arguments is TransactionType
-            ? settings.arguments as TransactionType
-            : TransactionType.expense;
-        // <Transaction?> faz a rota devolver o gasto criado em `Navigator.pop`.
-        return _page<Transaction?>(AddTransactionScreen(initialType: type), settings);
+        // <Transaction?> faz a rota devolver o registro criado em `Navigator.pop`.
+        return _page<Transaction?>(
+          AddTransactionScreen(args: settings.arguments as AddTransactionArgs),
+          settings,
+        );
+      case AppRoutes.addDebt:
+        return _page<Debt?>(const AddDebtScreen(), settings);
+      case AppRoutes.simulators:
+        return _page(const SimulatorsScreen(), settings);
       case AppRoutes.video:
         return _page(
           VideoPlayerScreen(video: settings.arguments as LessonVideo),

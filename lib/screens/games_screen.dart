@@ -8,6 +8,7 @@ import '../models/game.dart';
 import '../theme/app_theme.dart';
 import '../widgets/app_top_bar.dart';
 import '../widgets/mascot.dart';
+import '../widgets/simulators_tile.dart';
 import '../widgets/tag_chip.dart';
 import 'video_lessons_section.dart';
 
@@ -105,7 +106,11 @@ class _GamesCatalogState extends State<GamesCatalog> {
             stars: _bestStars[game.id] ?? 0,
             onTap: () => _openGame(game),
           ),
-        if (widget.showVideos) const VideoLessonsSection(),
+        if (widget.showVideos) ...[
+          const SizedBox(height: 6),
+          const SimulatorsTile(),
+          const VideoLessonsSection(),
+        ],
       ],
     );
   }

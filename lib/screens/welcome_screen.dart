@@ -13,6 +13,7 @@ import '../widgets/app_button.dart';
 import '../widgets/audio_button.dart';
 import '../widgets/mascot.dart';
 import '../widgets/section_title.dart';
+import '../widgets/simulators_tile.dart';
 import '../widgets/tag_chip.dart';
 
 /// Tela 1: Início (área aberta, antes do login).
@@ -39,7 +40,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
       'Tela inicial do Grana Amiga. No topo, o logo e o botão de acessibilidade. '
       'Em seguida, uma mensagem de boas-vindas com o Amiguinho, a moedinha que '
       'guia você. Mais abaixo, cartões com jogos para aprender sobre dinheiro e '
-      'cartões com seis videoaulas rápidas, que você pode assistir sem cadastro. '
+      'cartões com seis videoaulas rápidas e um atalho para os simuladores, tudo sem cadastro. '
       'No fim da tela, o botão para entrar ou criar a sua conta.';
 
   /// Tons pastel dos cartões de videoaula, em sequência.
@@ -90,9 +91,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
             _buildHero(),
             SectionTitle(
               'Jogos para aprender',
-              trailing: stars == 0
-                  ? null
-                  : '$stars ${stars == 1 ? 'estrela' : 'estrelas'}',
+              trailing: stars == 0 ? null : '$stars ${stars == 1 ? 'estrela' : 'estrelas'}',
             ),
             SizedBox(
               height: 214,
@@ -121,13 +120,11 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                 style: TextButton.styleFrom(
                   foregroundColor: AppColors.petrol,
                   minimumSize: const Size(48, 48),
-                  textStyle: const TextStyle(
-                      fontSize: 16, fontWeight: FontWeight.w800),
+                  textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
                 ),
               ),
             ),
-            SectionTitle('Videoaulas rápidas',
-                trailing: '${allVideos.length} aulas'),
+            SectionTitle('Videoaulas rápidas', trailing: '${allVideos.length} aulas'),
             SizedBox(
               height: 190,
               // Outro carrossel horizontal, agora com as videoaulas.
@@ -150,6 +147,8 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                 },
               ),
             ),
+            const SizedBox(height: 16),
+            const SimulatorsTile(),
             const SizedBox(height: 20),
             AppButton(
               label: 'Entrar / Criar minha conta',
@@ -213,8 +212,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
             foregroundColor: AppColors.petrol,
             minimumSize: const Size(52, 52),
             side: const BorderSide(color: AppColors.border, width: 1.5),
-            shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
           ),
         ),
       ],
@@ -233,8 +231,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
         ),
         borderRadius: BorderRadius.circular(32),
         boxShadow: const [
-          BoxShadow(
-              color: AppColors.shadow, blurRadius: 26, offset: Offset(0, 10)),
+          BoxShadow(color: AppColors.shadow, blurRadius: 26, offset: Offset(0, 10)),
         ],
       ),
       child: Column(
@@ -242,8 +239,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
         children: [
           const Text('OLÁ, QUE BOM TER VOCÊ AQUI', style: AppText.eyebrow),
           const SizedBox(height: 8),
-          Text('Dinheiro pode ser mais simples.',
-              style: AppText.h1.copyWith(fontSize: 32)),
+          Text('Dinheiro pode ser mais simples.', style: AppText.h1.copyWith(fontSize: 32)),
           const SizedBox(height: 10),
           const Text(
             'Aprenda e cuide das contas da família. Sem cobrança e sem julgamento.',
@@ -256,8 +252,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
               Expanded(
                 child: Align(
                   alignment: Alignment.bottomLeft,
-                  child: AudioButton(
-                      text: _presentation, label: 'Ouvir apresentação'),
+                  child: AudioButton(text: _presentation, label: 'Ouvir apresentação'),
                 ),
               ),
               SizedBox(width: 8),
@@ -312,8 +307,7 @@ class _GameCarouselCard extends StatelessWidget {
                     if (stars > 0)
                       Row(
                         children: [
-                          const Icon(Icons.star,
-                              color: AppColors.petrol, size: 22),
+                          const Icon(Icons.star, color: AppColors.petrol, size: 22),
                           const SizedBox(width: 2),
                           Text('$stars', style: AppText.h3),
                         ],
@@ -375,8 +369,7 @@ class _VideoCarouselCard extends StatelessWidget {
                     color: AppColors.card,
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(Icons.play_arrow,
-                      color: AppColors.petrol, size: 32),
+                  child: const Icon(Icons.play_arrow, color: AppColors.petrol, size: 32),
                 ),
                 const Spacer(),
                 TagChip(

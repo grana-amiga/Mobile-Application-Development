@@ -62,7 +62,13 @@ String spokenBRL(double value) {
 
 /// Converte o texto digitado ("10,50") em número. Retorna null se inválido.
 double? parseAmount(String text) {
-  final normalized = text.trim().replaceAll('.', '').replaceAll(',', '.');
+  final trimmed = text.trim();
+  // Teclados sem vírgula digitam "2.5": um único ponto com 1 ou 2 dígitos
+  // depois (e sem vírgula) é decimal; "1.200" continua sendo milhar.
+  final dotDecimal = RegExp(r'^\d+\.\d{1,2}$').hasMatch(trimmed);
+  final normalized = dotDecimal
+      ? trimmed
+      : trimmed.replaceAll('.', '').replaceAll(',', '.');
   if (normalized.isEmpty) return null;
   return double.tryParse(normalized);
 }

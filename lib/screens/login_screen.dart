@@ -31,12 +31,13 @@ class _LoginScreenState extends State<LoginScreen> {
   final _phoneController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmController = TextEditingController();
+  final _incomeController = TextEditingController();
 
   bool _isRegister = false; // false = entrar, true = criar conta
   bool _hidePassword = true;
   bool _loading = false;
   bool _showErrorsWhileTyping = false; // liga depois da primeira tentativa
-  String? _error; // mensagem de erro vinda do "servidor"
+  String? _error; // mensagem de erro vinda da API
 
   // Libera a memória dos controllers quando a tela é fechada.
   @override
@@ -45,6 +46,7 @@ class _LoginScreenState extends State<LoginScreen> {
     _phoneController.dispose();
     _passwordController.dispose();
     _confirmController.dispose();
+    _incomeController.dispose();
     super.dispose();
   }
 
@@ -57,18 +59,8 @@ class _LoginScreenState extends State<LoginScreen> {
     _formKey.currentState?.reset();
   }
 
-  // Preenche os campos com a conta de exemplo (útil na demonstração).
-  void _fillDemoAccount() {
-    setState(() {
-      _isRegister = false;
-      _error = null;
-      _phoneController.text = AuthService.demoPhone;
-      _passwordController.text = AuthService.demoPassword;
-    });
-  }
-
-  // Valida o formulário e tenta entrar. É `async` porque simulamos uma
-  // pequena espera, como se o app estivesse falando com um servidor.
+  // Valida o formulário e chama a API. É `async` porque esperamos a resposta
+  // do servidor (o `await` não trava a tela, só pausa esta função).
   Future<void> _submit() async {
     FocusScope.of(context).unfocus(); // fecha o teclado
     final form = _formKey.currentState;
@@ -84,17 +76,17 @@ class _LoginScreenState extends State<LoginScreen> {
       _loading = true;
       _error = null;
     });
-    await Future.delayed(const Duration(milliseconds: 700));
-    if (!mounted) return; // a tela pode ter sido fechada durante a espera
-
     final auth = AuthService.instance;
+    final income = parseAmount(_incomeController.text);
     final error = _isRegister
-        ? auth.register(
+        ? await auth.register(
             name: _nameController.text.trim(),
             phone: _phoneController.text,
             password: _passwordController.text,
+            monthlyIncome: income,
           )
-        : auth.login(_phoneController.text, _passwordController.text);
+        : await auth.login(_phoneController.text, _passwordController.text);
+    if (!mounted) return; // a tela pode ter sido fechada durante a espera
 
     if (error != null) {
       setState(() {
@@ -165,7 +157,7 @@ class _LoginScreenState extends State<LoginScreen> {
       appBar: buildAppBar(
         title: _isRegister ? 'Criar conta' : 'Entrar',
         audioText: _isRegister
-            ? 'Criar conta. Digite seu nome, o número do celular e uma senha com pelo menos 6 caracteres.'
+            ? 'Criar conta. Digite seu nome, o número do celular, uma senha com pelo menos 8 caracteres e, se quiser, a sua renda do mês.'
             : 'Entrar. Digite o número do celular e a senha. Se já entrou antes, você pode usar a digital.',
       ),
       body: SafeArea(
@@ -278,8 +270,9 @@ class _LoginScreenState extends State<LoginScreen> {
                       if (text.isEmpty) {
                         return _isRegister ? 'Crie uma senha.' : 'Digite a sua senha.';
                       }
-                      if (text.length < 6) {
-                        return 'A senha precisa ter pelo menos 6 caracteres.';
+                      // Na criação da conta a API exige 8 caracteres ou mais.
+                      if (_isRegister && text.length < 8) {
+                        return 'A senha precisa ter pelo menos 8 caracteres.';
                       }
                       return null;
                     },
@@ -302,6 +295,30 @@ class _LoginScreenState extends State<LoginScreen> {
                         return null;
                       },
                     ),
+                    const SizedBox(height: 14),
+                    TextFormField(
+                      controller: _incomeController,
+                      keyboardType:
+                          const TextInputType.numberWithOptions(decimal: true),
+                      textInputAction: TextInputAction.done,
+                      style: AppText.body.copyWith(fontSize: 18),
+                      decoration: appInputDecoration(
+                        label: 'Renda do mês (opcional)',
+                        hint: '2400,00',
+                        icon: Icons.attach_money,
+                      ),
+                      // Opcional: vazio é aceito. Ajuda o app a calcular quanto
+                      // das parcelas pesa na renda.
+                      validator: (value) {
+                        final text = (value ?? '').trim();
+                        if (text.isEmpty) return null;
+                        final amount = parseAmount(text);
+                        if (amount == null || amount < 0) {
+                          return 'Digite só números, por exemplo 2400,00.';
+                        }
+                        return null;
+                      },
+                    ),
                   ],
                 ],
               ),
@@ -316,20 +333,13 @@ class _LoginScreenState extends State<LoginScreen> {
               loading: _loading,
               onPressed: _submit,
             ),
-            if (!_isRegister)
-              Align(
-                alignment: Alignment.centerLeft,
-                child: TextButton(
-                  onPressed: _fillDemoAccount,
-                  style: TextButton.styleFrom(
-                    foregroundColor: AppColors.petrol,
-                    minimumSize: const Size(48, 48),
-                    textStyle: const TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                  child: const Text('Usar a conta de exemplo'),
+            if (_loading)
+              const Padding(
+                padding: EdgeInsets.only(top: 10),
+                child: Text(
+                  'Conectando ao servidor... na primeira vez pode levar até 1 minuto.',
+                  textAlign: TextAlign.center,
+                  style: AppText.small,
                 ),
               ),
             const SizedBox(height: 12),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'core/accessibility.dart';
+import 'core/app_navigator.dart';
 import 'core/app_router.dart';
 import 'core/app_routes.dart';
 import 'theme/app_theme.dart';
@@ -19,6 +20,7 @@ class GranaAmigaApp extends StatelessWidget {
         return MaterialApp(
           title: 'Grana Amiga',
           debugShowCheckedModeBanner: false,
+          navigatorKey: AppNavigator.key,
           theme: AppTheme.light(),
           initialRoute: AppRoutes.welcome,
           onGenerateRoute: AppRouter.onGenerateRoute,

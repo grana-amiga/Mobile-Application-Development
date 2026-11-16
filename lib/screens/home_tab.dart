@@ -22,15 +22,22 @@ class HomeTab extends StatelessWidget {
   const HomeTab({
     super.key,
     required this.userName,
+    required this.summary,
     required this.transactions,
     required this.now,
     required this.dueSoon,
     required this.onAddTransaction,
     required this.onOpenWhatsApp,
     required this.onSeeBills,
+    required this.onRefresh,
   });
 
   final String userName;
+
+  /// Total de entradas e saídas do mês (vem da API: `/transacoes/resumo`).
+  final MoneySummary summary;
+
+  /// Últimas movimentações, da mais nova para a mais antiga.
   final List<Transaction> transactions;
   final DateTime now;
 
@@ -41,13 +48,15 @@ class HomeTab extends StatelessWidget {
   final VoidCallback onOpenWhatsApp;
   final VoidCallback onSeeBills;
 
+  /// Chamado ao puxar a lista para baixo (recarrega os dados da API).
+  final Future<void> Function() onRefresh;
+
   /// Texto lido em voz alta pelo botão de áudio da barra superior.
   static String audioText({
     required String userName,
-    required List<Transaction> transactions,
+    required MoneySummary summary,
     required DateTime now,
   }) {
-    final summary = MoneySummary.fromTransactions(transactions);
     return 'Olá, $userName. O seu Termômetro do Dinheiro está em '
         '${summary.level.label}. ${_balanceAudio(summary, monthName(now.month))}';
   }
@@ -61,7 +70,6 @@ class HomeTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final summary = MoneySummary.fromTransactions(transactions);
     final month = monthName(now.month);
     final balanceAudio = _balanceAudio(summary, month);
 
@@ -69,19 +77,25 @@ class HomeTab extends StatelessWidget {
     return Column(
       children: [
         Expanded(
-          child: ListView(
-            padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
-            children: [
-              _buildHero(summary),
-              if (dueSoon > 0) ...[
+          // RefreshIndicator: puxar a lista para baixo recarrega os dados.
+          child: RefreshIndicator(
+            onRefresh: onRefresh,
+            child: ListView(
+              // AlwaysScrollable permite puxar mesmo quando a lista é curta.
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+              children: [
+                _buildHero(summary),
+                if (dueSoon > 0) ...[
+                  const SizedBox(height: 14),
+                  _DueSoonPill(count: dueSoon, onTap: onSeeBills),
+                ],
                 const SizedBox(height: 14),
-                _DueSoonPill(count: dueSoon, onTap: onSeeBills),
+                _buildBalanceCard(summary, month, balanceAudio),
+                const SectionTitle('Últimos registros'),
+                _buildFeed(),
               ],
-              const SizedBox(height: 14),
-              _buildBalanceCard(summary, month, balanceAudio),
-              const SectionTitle('Últimos registros'),
-              _buildFeed(),
-            ],
+            ),
           ),
         ),
         _ActionBar(
@@ -389,6 +403,7 @@ class _ActionButton extends StatelessWidget {
             constraints: const BoxConstraints(minHeight: 68),
             padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 8),
             child: Column(
+              mainAxisSize: MainAxisSize.min,
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Icon(icon, color: foreground, size: 28),

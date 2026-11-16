@@ -2,18 +2,23 @@ import 'package:flutter/material.dart';
 
 import '../core/formatters.dart';
 import '../models/transaction.dart';
+import '../services/api_client.dart';
 import '../services/chat_parser.dart';
+import '../services/transaction_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/app_snackbar.dart';
 import '../widgets/app_top_bar.dart';
 
 /// Parâmetros enviados para a tela do chat pela rota.
 class WhatsAppArgs {
-  const WhatsAppArgs({required this.onConfirm});
+  const WhatsAppArgs({required this.categories, required this.onCreated});
 
-  /// Chamado quando a pessoa confirma um registro feito pelo chat.
+  /// Categorias da API, usadas para entender frases como "gastei 30 no mercado".
+  final List<TxCategory> categories;
+
+  /// Chamado depois que a API salva o registro confirmado no chat.
   /// O painel usa isso para atualizar o saldo (setState lá no pai).
-  final ValueChanged<Transaction> onConfirm;
+  final ValueChanged<Transaction> onCreated;
 }
 
 /// Uma mensagem do chat.
@@ -93,7 +98,7 @@ class _WhatsAppScreenState extends State<WhatsAppScreen> {
     await Future<void>.delayed(const Duration(milliseconds: 600));
     if (!mounted) return;
 
-    final entry = ChatParser.parse(clean);
+    final entry = ChatParser.parse(clean, widget.args.categories);
     setState(() {
       if (entry == null) {
         _messages.add(_Message(
@@ -119,25 +124,42 @@ class _WhatsAppScreenState extends State<WhatsAppScreen> {
     _send('Gastei vinte reais no mercado');
   }
 
-  void _confirm(_Message message) {
+  bool _saving = false; // evita confirmar duas vezes enquanto a API responde
+
+  // Salva o registro na API. Se falhar, o robô avisa no chat e o botão
+  // "Confirmar" continua disponível para tentar de novo.
+  Future<void> _confirm(_Message message) async {
     final entry = message.entry;
-    if (entry == null || message.confirmed) return;
-    widget.args.onConfirm(
-      Transaction(
+    if (entry == null || message.confirmed || _saving) return;
+    _saving = true;
+    try {
+      final created = await TransactionService.instance.create(
+        categoryId: entry.category.id,
         type: entry.type,
-        category: entry.category,
         amount: entry.amount,
-        date: DateTime.now(),
         note: 'Pelo WhatsApp',
-      ),
-    );
-    setState(() {
-      message.confirmed = true;
-      _messages.add(_Message(
-        fromBot: true,
-        text: 'Pronto, registrado! ✅ Seu saldo já foi atualizado.',
-      ));
-    });
+      );
+      widget.args.onCreated(created);
+      if (!mounted) return;
+      setState(() {
+        message.confirmed = true;
+        _messages.add(_Message(
+          fromBot: true,
+          text: 'Pronto, registrado! ✅ Seu saldo já foi atualizado.',
+        ));
+      });
+    } on ApiException catch (error) {
+      if (!mounted) return;
+      showAppSnackBar(context, error.message, isError: true);
+      setState(() {
+        _messages.add(_Message(
+          fromBot: true,
+          text: 'Não consegui registrar agora. 😕 Toque em Confirmar para tentar de novo.',
+        ));
+      });
+    } finally {
+      _saving = false;
+    }
     _scrollToEnd();
   }
 

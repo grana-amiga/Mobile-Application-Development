@@ -2,10 +2,23 @@ import 'package:flutter/material.dart';
 
 import '../core/formatters.dart';
 import '../models/transaction.dart';
+import '../services/api_client.dart';
+import '../services/transaction_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/app_button.dart';
 import '../widgets/app_snackbar.dart';
 import '../widgets/app_top_bar.dart';
+
+/// Parâmetros enviados para a tela pela rota.
+class AddTransactionArgs {
+  const AddTransactionArgs({required this.type, required this.categories});
+
+  /// Tipo escolhido no painel: (+) Entrada ou (-) Saída.
+  final TransactionType type;
+
+  /// Categorias vindas da API (`GET /categorias`).
+  final List<TxCategory> categories;
+}
 
 /// Tela 5: Adicionar gasto (ou entrada).
 ///
@@ -13,13 +26,13 @@ import '../widgets/app_top_bar.dart';
 /// (apenas visual nesta versão). Usa `Form` + `GlobalKey<FormState>` para
 /// validar os campos e mostra um SnackBar de confirmação ao salvar.
 ///
-/// Ao confirmar, a tela se fecha devolvendo a [Transaction] criada para a
-/// tela anterior, que então chama `setState` e atualiza o saldo.
+/// Ao confirmar, a tela envia o registro para a API (`POST /transacoes`) e se
+/// fecha devolvendo a [Transaction] criada para a tela anterior, que então
+/// chama `setState` e atualiza o saldo.
 class AddTransactionScreen extends StatefulWidget {
-  const AddTransactionScreen({super.key, required this.initialType});
+  const AddTransactionScreen({super.key, required this.args});
 
-  /// Tipo escolhido no painel: (+) Entrada ou (-) Saída.
-  final TransactionType initialType;
+  final AddTransactionArgs args;
 
   @override
   State<AddTransactionScreen> createState() => _AddTransactionScreenState();
@@ -35,6 +48,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
   TxCategory? _category;
   String _amountText = ''; // o que foi digitado no teclado, ex.: "10,50"
   bool _showErrorsWhileTyping = false;
+  bool _saving = false; // true enquanto espera a resposta da API
 
   // Teclas do teclado numérico. "back" é a tecla de apagar.
   static const List<String> _keys = [
@@ -47,7 +61,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
   @override
   void initState() {
     super.initState();
-    _type = widget.initialType;
+    _type = widget.args.type;
   }
 
   @override
@@ -59,8 +73,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
 
   bool get _isExpense => _type == TransactionType.expense;
 
-  List<TxCategory> get _categories =>
-      _isExpense ? expenseCategories : incomeCategories;
+  List<TxCategory> get _categories => categoriesOf(widget.args.categories, _type);
 
   void _setType(TransactionType type) {
     setState(() {
@@ -111,9 +124,12 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
   }
 
   // Valida e salva. Se algo estiver errado, mostra o erro em cada campo e em
-  // um SnackBar vermelho. Se estiver tudo certo, mostra o SnackBar de
-  // confirmação e fecha a tela devolvendo a movimentação criada.
-  void _submit() {
+  // um SnackBar vermelho. Se estiver tudo certo, envia para a API; quando ela
+  // responde, mostra o SnackBar de confirmação e fecha a tela devolvendo a
+  // movimentação criada. Se a API falhar, mostra o erro e a pessoa pode tentar
+  // de novo sem perder o que digitou.
+  Future<void> _submit() async {
+    if (_saving) return;
     final form = _formKey.currentState;
     if (form == null) return;
 
@@ -131,19 +147,25 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
     final category = _category;
     if (category == null) return; // já garantido pela validação
 
-    final transaction = Transaction(
-      type: _type,
-      category: category,
-      amount: amount,
-      date: DateTime.now(),
-      note: _noteController.text.trim(),
-    );
-
-    showAppSnackBar(
-      context,
-      '${_isExpense ? 'Gasto' : 'Entrada'} de ${formatBRL(amount)} registrado em ${category.label}!',
-    );
-    Navigator.pop(context, transaction);
+    setState(() => _saving = true);
+    try {
+      final transaction = await TransactionService.instance.create(
+        categoryId: category.id,
+        type: _type,
+        amount: amount,
+        note: _noteController.text,
+      );
+      if (!mounted) return;
+      showAppSnackBar(
+        context,
+        '${_isExpense ? 'Gasto' : 'Entrada'} de ${formatBRL(amount)} registrado em ${category.label}!',
+      );
+      Navigator.pop(context, transaction);
+    } on ApiException catch (error) {
+      if (!mounted) return;
+      setState(() => _saving = false);
+      showAppSnackBar(context, error.message, isError: true);
+    }
   }
 
   @override
@@ -238,6 +260,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                 label: _isExpense ? 'Confirmar gasto' : 'Confirmar entrada',
                 icon: Icons.check,
                 showArrow: false,
+                loading: _saving,
                 onPressed: _submit,
               ),
             ],
@@ -255,6 +278,12 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
       validator: (_) => _category == null ? 'Toque em uma figura para escolher.' : null,
       builder: (field) {
         final errorText = field.errorText;
+        if (_categories.isEmpty) {
+          return const Text(
+            'Não foi possível carregar as categorias. Volte e tente de novo.',
+            style: AppText.body,
+          );
+        }
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [

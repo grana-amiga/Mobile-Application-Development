@@ -1,87 +1,124 @@
 import '../core/formatters.dart';
+import 'api_client.dart';
 
-/// Autenticação de exemplo (em memória).
+/// Dados da sessão aberta: token JWT, validade e quem entrou.
+class AuthSession {
+  const AuthSession({
+    required this.token,
+    required this.expiresAt,
+    required this.userId,
+    required this.name,
+  });
+
+  /// Converte o `AuthResponse` da API.
+  factory AuthSession.fromJson(Map<String, dynamic> json) {
+    final user = json['usuario'] as Map<String, dynamic>;
+    return AuthSession(
+      token: '${json['token']}',
+      // Se a validade não vier (ou vier inválida), assume 2 horas.
+      expiresAt: DateTime.tryParse('${json['expiraEm']}') ??
+          DateTime.now().toUtc().add(const Duration(hours: 2)),
+      userId: (user['id'] as num).toInt(),
+      name: '${user['nome']}',
+    );
+  }
+
+  final String token;
+  final DateTime expiresAt;
+  final int userId;
+  final String name;
+
+  bool get isExpired => !expiresAt.isAfter(DateTime.now().toUtc());
+}
+
+/// Cadastro e login pela API (`/auth/cadastro` e `/auth/login`).
 ///
-/// Ainda não existe servidor: as contas ficam guardadas só enquanto o app
-/// está aberto. Serve para demonstrar o fluxo de cadastro e login, com
-/// validações e mensagens de erro. Em um app real, esta classe falaria com
-/// uma API segura e a senha nunca seria guardada em texto puro.
+/// O token fica só na memória do app: ao fechar o app, a pessoa entra de
+/// novo. Depois de sair da conta, a "biometria" (simulada) reaproveita o
+/// último token enquanto ele ainda estiver válido (2 horas).
 class AuthService {
   AuthService._();
 
   static final AuthService instance = AuthService._();
 
-  /// Conta de exemplo para a demonstração.
-  static const String demoPhone = '(11) 98888-1234';
-  static const String demoPassword = '123456';
+  final ApiClient _api = ApiClient.instance;
 
-  // Chave = só os números do telefone.
-  final Map<String, _Account> _accounts = {
-    '11988881234': _Account(name: 'Maria', password: demoPassword),
-  };
+  AuthSession? _session; // quem está logado agora
+  AuthSession? _lastSession; // última sessão (habilita a biometria)
 
-  String? _currentPhone; // quem está logado agora
-  String? _lastPhone; // quem entrou por último (habilita a biometria)
+  bool get isLoggedIn => _session != null;
 
-  bool get isLoggedIn => _currentPhone != null;
+  /// A biometria só fica disponível depois do primeiro acesso e enquanto o
+  /// último token não vencer.
+  bool get canUseBiometrics {
+    final last = _lastSession;
+    return last != null && !last.isExpired;
+  }
 
-  /// A biometria só fica disponível depois do primeiro acesso.
-  bool get canUseBiometrics => _lastPhone != null;
+  int? get userId => _session?.userId;
 
   /// Primeiro nome de quem está logado.
   String get userName {
-    final account = _accounts[_currentPhone];
-    return account == null ? 'amigo' : account.name;
+    final name = _session?.name.trim() ?? '';
+    if (name.isEmpty) return 'amigo';
+    return name.split(' ').first;
   }
 
   /// Entra com telefone e senha. Devolve uma mensagem de erro, ou `null` se
   /// deu certo.
-  String? login(String phone, String password) {
-    final key = phoneDigits(phone);
-    final account = _accounts[key];
-    if (account == null) {
-      return 'Não encontramos esse telefone. Toque em "Criar conta" para começar.';
+  Future<String?> login(String phone, String password) async {
+    try {
+      final data = await _api.post(
+        '/auth/login',
+        body: {'telefone': phoneDigits(phone), 'senha': password},
+      );
+      _start(AuthSession.fromJson(data as Map<String, dynamic>));
+      return null;
+    } on ApiException catch (error) {
+      return error.message;
     }
-    if (account.password != password) {
-      return 'Senha incorreta. Confira e tente de novo.';
-    }
-    _currentPhone = key;
-    _lastPhone = key;
-    return null;
   }
 
   /// Cria uma conta nova e já entra nela. Devolve mensagem de erro ou `null`.
-  String? register({
+  Future<String?> register({
     required String name,
     required String phone,
     required String password,
-  }) {
-    final key = phoneDigits(phone);
-    if (_accounts.containsKey(key)) {
-      return 'Esse telefone já tem conta. Toque em "Entrar".';
+    double? monthlyIncome,
+  }) async {
+    try {
+      final data = await _api.post(
+        '/auth/cadastro',
+        body: {
+          'nome': name,
+          'telefone': phoneDigits(phone),
+          'senha': password,
+          if (monthlyIncome != null) 'rendaMensal': monthlyIncome,
+        },
+      );
+      _start(AuthSession.fromJson(data as Map<String, dynamic>));
+      return null;
+    } on ApiException catch (error) {
+      return error.message;
     }
-    _accounts[key] = _Account(name: name, password: password);
-    _currentPhone = key;
-    _lastPhone = key;
-    return null;
   }
 
   /// Entrada simulada por biometria (digital ou rosto).
   bool loginWithBiometrics() {
-    final last = _lastPhone;
-    if (last == null) return false;
-    _currentPhone = last;
+    final last = _lastSession;
+    if (last == null || last.isExpired) return false;
+    _start(last);
     return true;
   }
 
   void logout() {
-    _currentPhone = null;
+    _session = null;
+    _api.token = null;
   }
-}
 
-class _Account {
-  const _Account({required this.name, required this.password});
-
-  final String name;
-  final String password;
+  void _start(AuthSession session) {
+    _session = session;
+    _lastSession = session;
+    _api.token = session.token;
+  }
 }
